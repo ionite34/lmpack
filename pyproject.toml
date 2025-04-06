@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "lmpack"
+version = "0.1.0"
+description = ""
+authors = ["Ionite <dev@ionite.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10,^3.11,^3.12"
+typer = "^0.15.2"
+py-walk = "^0.3.3"
+
+[tool.poetry.scripts]
+lmpack = "lmpack.main:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
