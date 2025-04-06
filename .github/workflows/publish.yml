@@ -18,6 +18,7 @@ jobs:
     permissions:
       id-token: write # Allow action to get OIDC token from GitHub
       contents: write # Allow action to create tags and releases
+      attestations: write
 
     steps:
     - name: Checkout repository
@@ -60,19 +61,17 @@ jobs:
       run: |
         git config user.name "${{ github.actor }}"
         git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-        git tag "v${{ github.inputs.version }}" -m "Release version ${{ github.inputs.version }}"
+        git tag "v${{ github.event.inputs.version }}" -m "Release version ${{ github.event.inputs.version }}"
 
     - name: Push Git tag
-      run: git push origin "v${{ github.inputs.version }}"
+      run: git push origin "v${{ github.event.inputs.version }}"
 
     - name: Create GitHub Release and Upload Assets
       uses: ncipollo/release-action@v1
       with:
-        # GITHUB_TOKEN is automatically available, permission set above
-        # token: ${{ secrets.GITHUB_TOKEN }} # Not usually needed explicitly with this action
-        tag: "v${{ github.inputs.version }}" # Tag to associate release with
-        name: "Release ${{ github.inputs.version }}" # Release title
-        body: "Release of lmpack version ${{ github.inputs.version }}." # Simple body, customize as needed
+        tag: "v${{ github.event.inputs.version }}"
+        name: "v${{ github.event.inputs.version }}"
+        body: "Release v${{ github.event.inputs.version }}.
         draft: false
         prerelease: false
         artifacts: "dist/*"
