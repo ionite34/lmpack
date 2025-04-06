@@ -483,4 +483,4 @@ tiktoken = ["tiktoken"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10,^3.11,^3.12"
-content-hash = "17978071b1b82b587d6137e41f7de5f574f5c325c10bb49f33022049b339b86a"
+content-hash = "08f328833178b81ddcfe2feabe4647be96efd82a2d7456373cd9947ad99e0a3a"
