@@ -1,0 +1,79 @@
+name: Publish Python Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.1.0). Must match semantic versioning.'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    name: Publish to PyPI and Create Release
+    runs-on: ubuntu-latest
+    environment: # Define the PyPI environment for trusted publishing
+      name: pypi
+      url: https://pypi.org/p/lmpack # Link to your PyPI project
+    permissions:
+      id-token: write # Allow action to get OIDC token from GitHub
+      contents: write # Allow action to create tags and releases
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true # Create venv for dependency caching if needed
+        virtualenvs-in-project: true # Keep venv within project dir
+        installer-parallel: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies # Install project deps into the venv
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root --all-extras # Install all deps but not the project itself yet
+
+    - name: Update version in pyproject.toml
+      run: poetry version ${{ github.inputs.version }} # Updates version using Poetry
+
+    - name: Build package
+      run: poetry build # Builds wheel and sdist into dist/
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # No password needed, uses OIDC token based on 'permissions' and 'environment'
+
+    - name: Create Git tag
+      run: |
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+        git tag "v${{ github.inputs.version }}" -m "Release version ${{ github.inputs.version }}"
+
+    - name: Push Git tag
+      run: git push origin "v${{ github.inputs.version }}"
+
+    - name: Create GitHub Release and Upload Assets
+      uses: ncipollo/release-action@v1
+      with:
+        # GITHUB_TOKEN is automatically available, permission set above
+        # token: ${{ secrets.GITHUB_TOKEN }} # Not usually needed explicitly with this action
+        tag: "v${{ github.inputs.version }}" # Tag to associate release with
+        name: "Release ${{ github.inputs.version }}" # Release title
+        body: "Release of lmpack version ${{ github.inputs.version }}." # Simple body, customize as needed
+        draft: false
+        prerelease: false
+        artifacts: "dist/*"
+        allowUpdates: true
