@@ -359,6 +359,7 @@ files = [
 [package.dependencies]
 markdown-it-py = ">=2.2.0"
 pygments = ">=2.13.0,<3.0.0"
+typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
@@ -482,5 +483,5 @@ tiktoken = ["tiktoken"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.10,^3.11,^3.12"
-content-hash = "08f328833178b81ddcfe2feabe4647be96efd82a2d7456373cd9947ad99e0a3a"
+python-versions = ">=3.10,<3.15"
+content-hash = "b9168e90547e540f14fa2f07f4fb39906c4485465a1fe6383646695965e70f32"
