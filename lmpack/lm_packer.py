@@ -69,7 +69,6 @@ DEFAULT_FILE_ERROR_TEMPLATE = Template(
 )
 
 
-# --- is_binary remains the same ---
 def is_binary(file_path: Path) -> bool:
     """
     Check if a file is binary.
@@ -78,7 +77,19 @@ def is_binary(file_path: Path) -> bool:
     mime = mimetypes.guess_type(file_path)
 
     if mime and mime[0] is not None:
-        return mime[0].startswith("text") is False
+        if mime[0].startswith("text"):
+            return False
+
+        if mime[0].startswith("image"):
+            return True
+
+        if mime[0].startswith("application"):
+            # Some are binary, like icons, but some are not
+            if mime[0] == "application/octet-stream":
+                return True
+            # Check for specific application types that are not binary
+            if mime[0] in ["application/json", "application/xml"]:
+                return False
 
     # 2. If mime type is not conclusive, read the first 1024 bytes
     with open(file_path, "rb") as f:
@@ -147,10 +158,11 @@ class LmPacker:
                 # Check ignores/includes for the directory itself
                 dir_node.is_ignored = self.file_ignores.is_match(dir_rel)
                 if len(self.include_matcher) > 0:
+                    ...
                     # Include check: matches dir OR any potential child path
-                    dir_node.is_included = self.include_matcher.is_match(dir_rel) or any(
-                        self.include_matcher.is_match(f"{dir_rel}/**")
-                    )  # Heuristic
+                    # dir_node.is_included = self.include_matcher.is_match(dir_rel) or (
+                    #     self.include_matcher.is_match(f"{dir_rel}/**")
+                    # )  # Heuristic
 
                 if not dir_node.should_process:
                     self.stats["dirs_ignored"] += 1
@@ -235,16 +247,20 @@ class LmPacker:
         _ = root_node.get_total_tokens()
         return root_node
 
-    def create_ascii_tree(self, root_node: DirectoryNode) -> str:
+    def create_ascii_tree(self, root_node: DirectoryNode, show_tokens: bool = False) -> str:
         """Creates an ASCII representation of the built directory tree."""
         lines = []
-        show_tokens = not isinstance(self.tokenizer, NullTokenizerBackend)
+
+        if show_tokens and isinstance(self.tokenizer, NullTokenizerBackend):
+            log.warning("Tokenizer is not set, cannot show token counts.")
+            show_tokens = False
 
         def build_tree_lines(node: FileSystemNode, prefix: str = "", is_last: bool = True):
             # Only add nodes that should be processed
             if not node.should_process:
                 return
 
+            # Use the passed 'show_tokens' flag
             token_str = (
                 f" ({node.get_total_tokens()} tokens)"
                 if show_tokens and node.get_total_tokens() > 0
@@ -274,9 +290,13 @@ class LmPacker:
         build_tree_lines(root_node)
         return "\n".join(lines)
 
-    def create_rich_tree(self, root_node: DirectoryNode) -> Tree:
+    def create_rich_tree(self, root_node: DirectoryNode, show_tokens: bool = False) -> Tree:
         """Creates a Rich Tree representation of the built directory tree."""
-        show_tokens = not isinstance(self.tokenizer, NullTokenizerBackend)
+
+        if show_tokens and isinstance(self.tokenizer, NullTokenizerBackend):
+            log.warning("Tokenizer is not set, cannot show token counts.")
+            show_tokens = False
+
         tree = Tree(
             f":open_file_folder: [link file://{root_node.path_abs}]{escape(root_node.name)}",
             guide_style="bold bright_blue",
