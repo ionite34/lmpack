@@ -41,6 +41,9 @@ class FilePatternMatcher:
         """
         Add a pattern to the parser.
         """
+        if not isinstance(pattern, str):
+            raise TypeError("Pattern must be a string.")
+
         if not pattern:
             raise ValueError("Pattern cannot be empty.")
 
@@ -50,9 +53,17 @@ class FilePatternMatcher:
         """
         Add a pattern to the parser.
         """
+        if isinstance(patterns, str):
+            patterns = [patterns]
+
         for pattern in patterns:
+            if isinstance(pattern, list):
+                self.add_patterns(pattern)
+                continue
+
             if not pattern:
                 raise ValueError("Pattern cannot be empty.")
+
             self.path_ignores.append(pattern)
 
     def is_match(self, path: str | Path) -> bool:
