@@ -71,7 +71,7 @@ jobs:
       with:
         tag: "v${{ github.event.inputs.version }}"
         name: "v${{ github.event.inputs.version }}"
-        body: "Release v${{ github.event.inputs.version }}.
+        body: "Release v${{ github.event.inputs.version }}"
         draft: false
         prerelease: false
         artifacts: "dist/*"
