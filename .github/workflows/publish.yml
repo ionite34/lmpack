@@ -57,6 +57,14 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       # No password needed, uses OIDC token based on 'permissions' and 'environment'
 
+    - name: Read Changelog Entry
+      uses: mindsers/changelog-reader-action@v2
+      id: read_changelog
+      with:
+        validation_level: 'warn'
+        version: ${{ github.event.inputs.version }}
+        path: ./CHANGELOG.md
+
     - name: Create Git tag
       run: |
         git config user.name "${{ github.actor }}"
@@ -71,7 +79,7 @@ jobs:
       with:
         tag: "v${{ github.event.inputs.version }}"
         name: "v${{ github.event.inputs.version }}"
-        body: "Release v${{ github.event.inputs.version }}"
+        body: ${{ steps.read_changelog.outputs.changes }}
         draft: false
         prerelease: false
         artifacts: "dist/*"
