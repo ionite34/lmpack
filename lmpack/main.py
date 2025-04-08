@@ -138,6 +138,14 @@ def create_repo_context(
                 "--include",
                 "-i",
                 parser=comma_list,
+                help="Include only patterns matching the given comma seperated pattern(s).",
+            ),
+        ] = None,
+        include_files: Annotated[
+            list[str] | None,
+            typer.Option(
+                "--include-file",
+                parser=comma_list,
                 help="Include only files matching the given comma seperated pattern(s).",
             ),
         ] = None,
@@ -160,7 +168,7 @@ def create_repo_context(
             ),
         ] = None,
         count_tokens: Annotated[
-            bool, typer.Option("--count-tokens", help="Enable token counting using tiktoken.")
+            bool, typer.Option("--count-tokens", "-t", help="Enable token counting using tiktoken.")
         ] = False,
         tokenizer_encoding: Annotated[
             str,
@@ -246,8 +254,14 @@ def create_repo_context(
 
     # User provided include patterns
     if include_patterns:
+        include_patterns = include_patterns[0]  # apparently a list of lists
         log.debug(f"Adding include patterns: {include_patterns}")
         packer.include_matcher.add_patterns(include_patterns)
+    if include_files:
+        include_files = include_files[0]  # apparently a list of lists
+        log.debug(f"Adding include files: {include_files}")
+        # Add '**/filename' to include only the file name
+        packer.include_matcher.add_patterns([f"**/{pattern}" for pattern in include_files])
 
     # Name output
     if output_name_template:
@@ -293,6 +307,7 @@ def create_repo_context(
     if effective_tree_format != TreeFormat.NONE:
         tree_content_plain = None  # For file output or plain console
         tree_content_rich = None  # For rich console output
+        should_show_tokens_in_tree = count_tokens # Determine if tokens should be shown based on CLI flag
 
         log.debug(
             f"Generating tree output (Format: {effective_tree_format}, To file: {is_writing_tree_to_file}, To console: {is_printing_to_console})")
@@ -300,11 +315,11 @@ def create_repo_context(
         # Generate necessary formats
         if is_writing_tree_to_file or effective_tree_format == TreeFormat.PLAIN:
             log.debug("Generating plain text tree...")
-            tree_content_plain = packer.create_ascii_tree(root_node)
+            tree_content_plain = packer.create_ascii_tree(root_node, show_tokens=should_show_tokens_in_tree)
 
         if is_printing_to_console and effective_tree_format == TreeFormat.RICH:
             log.debug("Generating Rich tree object...")
-            tree_content_rich = packer.create_rich_tree(root_node)
+            tree_content_rich = packer.create_rich_tree(root_node, show_tokens=should_show_tokens_in_tree)
 
         # Write to file if requested (always plain)
         if is_writing_tree_to_file:
@@ -338,10 +353,8 @@ def create_repo_context(
         with open(main_output_file, "w", encoding="utf-8") as outfile:
             # 1. Write the clean source tree (regenerate without tokens)
             log.debug("Generating clean tree for main output file...")
-            # Create temporary packer with NullTokenizer to get clean tree data
-            clean_packer = LmPacker(index_path, tokenizer=NullTokenizerBackend())
-            clean_root_node = clean_packer.build_tree()  # Build tree without token info
-            clean_tree_string = clean_packer.create_ascii_tree(clean_root_node)  # Generate ASCII from clean tree
+            # --- Call the same packer instance, but disable tokens ---
+            clean_tree_string = packer.create_ascii_tree(root_node, show_tokens=False)
 
             outfile.write("# Source Tree\n\n```\n")
             outfile.write(clean_tree_string)
