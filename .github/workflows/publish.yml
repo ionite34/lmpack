@@ -61,8 +61,7 @@ jobs:
       uses: mindsers/changelog-reader-action@v2
       id: read_changelog
       with:
-        validation_level: 'warn'
-        version: ${{ github.event.inputs.version }}
+        version: v${{ github.event.inputs.version }}
         path: ./CHANGELOG.md
 
     - name: Create Git tag
