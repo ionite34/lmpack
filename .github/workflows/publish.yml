@@ -18,7 +18,6 @@ jobs:
     permissions:
       id-token: write # Allow action to get OIDC token from GitHub
       contents: write # Allow action to create tags and releases
-      attestations: write
 
     steps:
     - name: Checkout repository
@@ -53,10 +52,6 @@ jobs:
     - name: Build package
       run: poetry build # Builds wheel and sdist into dist/
 
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      # No password needed, uses OIDC token based on 'permissions' and 'environment'
-
     - name: Read Changelog Entry
       uses: mindsers/changelog-reader-action@v2
       id: read_changelog
@@ -69,6 +64,10 @@ jobs:
         git config user.name "${{ github.actor }}"
         git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         git tag "v${{ github.event.inputs.version }}" -m "Release version ${{ github.event.inputs.version }}"
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # No password needed, uses OIDC token based on 'permissions' and 'environment'
 
     - name: Push Git tag
       run: git push origin "v${{ github.event.inputs.version }}"
