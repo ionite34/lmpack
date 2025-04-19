@@ -62,9 +62,13 @@ typer = "^0.15.2"
 py-walk = ">=0.3.3"
 tiktoken = { version = ">=0.9.0", optional = true }
 rich = ">=13.7.1"
+google-cloud-aiplatform = { extras = ["tokenization"], version = "^1.87.0", optional = true }
 
 [tool.poetry.extras]
 tiktoken = ["tiktoken"]
+vertexai = ["google-cloud-aiplatform"]
+tokenization = ["tiktoken", "google-cloud-aiplatform"]
+all = ["tiktoken", "google-cloud-aiplatform"]
 
 [tool.poetry.scripts]
 lmpack = "lmpack.main:app"
