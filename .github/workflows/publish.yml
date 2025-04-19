@@ -47,7 +47,7 @@ jobs:
       run: poetry install --no-interaction --no-root --all-extras # Install all deps but not the project itself yet
 
     - name: Update version in pyproject.toml
-      run: poetry version ${{ github.inputs.version }} # Updates version using Poetry
+      run: poetry version ${{ github.event.inputs.version }} # Updates version using Poetry
 
     - name: Build package
       run: poetry build # Builds wheel and sdist into dist/
@@ -56,7 +56,7 @@ jobs:
       uses: mindsers/changelog-reader-action@v2
       id: read_changelog
       with:
-        version: v${{ github.event.inputs.version }}
+        version: ${{ github.event.inputs.version }}
         path: ./CHANGELOG.md
 
     - name: Create Git tag
