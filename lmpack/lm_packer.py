@@ -112,6 +112,7 @@ class LmPacker:
     file_template: Template = DEFAULT_FILE_TEMPLATE
     file_error_template: Template | None = DEFAULT_FILE_ERROR_TEMPLATE
     file_binary_content_template: Template | None = DEFAULT_FILE_BINARY_CONTENT_TEMPLATE
+    file_no_content_template: Template | None = DEFAULT_FILE_NO_CONTENT_TEMPLATE
 
     display_path_normalizer: Callable[[Path], str] = formatting.to_disp_path
 
@@ -400,10 +401,10 @@ class LmPacker:
                 file_path_rel_disp = self.display_path_normalizer(file_node.path_rel)
 
                 if file_node.content_skipped:
-                    # Use the NO_CONTENT template (reuse existing one)
-                    yield DEFAULT_FILE_NO_CONTENT_TEMPLATE.safe_substitute(
-                        file_path_rel=file_path_rel_disp
-                    )
+                    if self.file_no_content_template:
+                        yield self.file_no_content_template.safe_substitute(
+                            file_path_rel=file_path_rel_disp
+                        )
                     continue  # Move to next node
 
                 if file_node.is_binary:
@@ -415,6 +416,7 @@ class LmPacker:
                     continue  # Move to next node
 
                 if file_node.read_error:
+                    log.info(f"File {file_node.path_rel} read error: {file_node.read_error}")
                     if self.file_error_template:
                         yield self.file_error_template.safe_substitute(
                             file_path_rel=file_path_rel_disp,
