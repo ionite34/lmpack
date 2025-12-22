@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0]
 ### Added
 - Adds new `--no-content-template-default` flag to enable the no-content template.
+### Fixed
+- Fixed `ValueError` when encountering symlinks pointing outside the indexed directory.
 
 ## [1.2.0]
 ### Added
