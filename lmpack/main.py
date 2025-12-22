@@ -101,104 +101,113 @@ class TreeFormat(str, enum.Enum):
 
 @app.command()
 def create_repo_context(
-        index_path: Path = typer.Argument(
-            ".",
-            help="Path to folder to index for packing.",
-            dir_okay=True,
-            file_okay=False,
-            exists=True,
+    index_path: Path = typer.Argument(
+        ".",
+        help="Path to folder to index for packing.",
+        dir_okay=True,
+        file_okay=False,
+        exists=True,
+        resolve_path=True,
+    ),
+    output_path: Path = typer.Option(
+        ".",
+        "--output",
+        help="Path to directory to write the output file to.",
+        dir_okay=True,
+        file_okay=False,
+        exists=True,
+        resolve_path=True,
+    ),
+    output_name_template: str = typer.Option(
+        DEFAULT_OUTPUT_NAME_TEMPLATE,
+        "--output-name",
+        help="Template for the output file name. Use {repo_name}, {index_path}, {rel_index_path} placeholders.",
+    ),
+    repo_root: Path | None = typer.Option(
+        None,
+        "--repo-root",
+        help="Path to the git root that contains the index path, detected if not provided.",
+        dir_okay=True,
+        file_okay=False,
+        exists=True,
+        resolve_path=True,
+    ),
+    include_patterns: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--include",
+            "-i",
+            parser=comma_list,
+            help="Include only patterns matching the given comma seperated pattern(s).",
+        ),
+    ] = None,
+    include_files: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--include-file",
+            parser=comma_list,
+            help="Include only files matching the given comma seperated pattern(s).",
+        ),
+    ] = None,
+    ignore_patterns: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--exclude",
+            "-e",
+            parser=comma_list,
+            help="Exclude files matching the given comma seperated pattern(s).",
+        ),
+    ] = None,
+    ignore_files: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--gitignore",
+            "-g",
+            parser=comma_list,
+            help=".gitignore/.aiexclude/.aiignore type files to use. Comma separated list of file paths.",
+        ),
+    ] = None,
+    count_tokens: Annotated[
+        bool, typer.Option("--count-tokens", "-t", help="Enable token counting using tiktoken.")
+    ] = False,
+    tokenizer_encoding: Annotated[
+        str,
+        typer.Option("--encoding", help="Tiktoken encoding to use (e.g., cl100k_base, p50k_base)."),
+    ] = "cl100k_base",
+    tree_format: Annotated[
+        TreeFormat,
+        typer.Option(
+            "--tree-format", case_sensitive=False, help="Format for the directory tree output."
+        ),
+    ] = TreeFormat.RICH,
+    tree_output_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--tree-output",
+            help="Optional file path to write the token-annotated tree.",
+            dir_okay=False,
+            file_okay=True,
+            writable=True,
             resolve_path=True,
         ),
-        output_path: Path = typer.Option(
-            ".",
-            "--output",
-            help="Path to directory to write the output file to.",
-            dir_okay=True,
-            file_okay=False,
-            exists=True,
-            resolve_path=True,
+    ] = None,
+    print_tree: Annotated[
+        bool,
+        typer.Option(
+            "--print-tree",
+            help="Print the token-annotated tree to stderr (default if counting tokens and not writing to file).",
         ),
-        output_name_template: str = typer.Option(
-            DEFAULT_OUTPUT_NAME_TEMPLATE,
-            "--output-name",
-            help="Template for the output file name. Use {repo_name}, {index_path}, {rel_index_path} placeholders.",
+    ] = False,
+    file_no_content_template_default: Annotated[
+        bool,
+        typer.Option(
+            "--no-content-template-default",
+            help="Use default template for files without content.",
         ),
-        repo_root: Path | None = typer.Option(
-            None,
-            "--repo-root",
-            help="Path to the git root that contains the index path, detected if not provided.",
-            dir_okay=True,
-            file_okay=False,
-            exists=True,
-            resolve_path=True,
-        ),
-        include_patterns: Annotated[
-            list[str] | None,
-            typer.Option(
-                "--include",
-                "-i",
-                parser=comma_list,
-                help="Include only patterns matching the given comma seperated pattern(s).",
-            ),
-        ] = None,
-        include_files: Annotated[
-            list[str] | None,
-            typer.Option(
-                "--include-file",
-                parser=comma_list,
-                help="Include only files matching the given comma seperated pattern(s).",
-            ),
-        ] = None,
-        ignore_patterns: Annotated[
-            list[str] | None,
-            typer.Option(
-                "--exclude",
-                "-e",
-                parser=comma_list,
-                help="Exclude files matching the given comma seperated pattern(s).",
-            ),
-        ] = None,
-        ignore_files: Annotated[
-            list[str] | None,
-            typer.Option(
-                "--gitignore",
-                "-g",
-                parser=comma_list,
-                help=".gitignore/.aiexclude/.aiignore type files to use. Comma separated list of file paths.",
-            ),
-        ] = None,
-        count_tokens: Annotated[
-            bool, typer.Option("--count-tokens", "-t", help="Enable token counting using tiktoken.")
-        ] = False,
-        tokenizer_encoding: Annotated[
-            str,
-            typer.Option("--encoding", help="Tiktoken encoding to use (e.g., cl100k_base, p50k_base)."),
-        ] = "cl100k_base",
-        tree_format: Annotated[
-            TreeFormat,
-            typer.Option("--tree-format", case_sensitive=False, help="Format for the directory tree output.")
-        ] = TreeFormat.RICH,
-        tree_output_file: Annotated[
-            Path | None,
-            typer.Option(
-                "--tree-output",
-                help="Optional file path to write the token-annotated tree.",
-                dir_okay=False,
-                file_okay=True,
-                writable=True,
-                resolve_path=True,
-            ),
-        ] = None,
-        print_tree: Annotated[
-            bool,
-            typer.Option(
-                "--print-tree",
-                help="Print the token-annotated tree to stderr (default if counting tokens and not writing to file).",
-            ),
-        ] = False,
-        verbose: Annotated[
-            bool, typer.Option("--verbose", "-v", help="Enable verbose output.")
-        ] = False,
+    ] = False,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output.")
+    ] = False,
 ):
     """
     Generates a single text file containing the content of files within a git repository,
@@ -217,6 +226,10 @@ def create_repo_context(
     log.debug(f"Using tokenizer: {tokenizer.__class__.__name__} ({tokenizer.encoding_name})")
 
     packer = LmPacker(index_path, tokenizer=tokenizer)
+
+    # Disable no content template unless enabled
+    if not file_no_content_template_default:
+        packer.file_no_content_template = None
 
     # Setup default ignores
     packer.file_ignores.add_patterns(DEFAULT_IGNORES)
@@ -296,7 +309,9 @@ def create_repo_context(
     # If outputting to a file, always use plain format for the file content
     is_writing_tree_to_file = tree_output_file is not None
     # If printing to console, decide between rich/plain based on terminal capability
-    is_printing_to_console = not is_writing_tree_to_file and effective_tree_format != TreeFormat.NONE
+    is_printing_to_console = (
+        not is_writing_tree_to_file and effective_tree_format != TreeFormat.NONE
+    )
     can_use_rich = err_console.is_terminal  # Check if stderr is a terminal
 
     if is_printing_to_console and not can_use_rich and effective_tree_format == TreeFormat.RICH:
@@ -307,19 +322,26 @@ def create_repo_context(
     if effective_tree_format != TreeFormat.NONE:
         tree_content_plain = None  # For file output or plain console
         tree_content_rich = None  # For rich console output
-        should_show_tokens_in_tree = count_tokens # Determine if tokens should be shown based on CLI flag
+        should_show_tokens_in_tree = (
+            count_tokens  # Determine if tokens should be shown based on CLI flag
+        )
 
         log.debug(
-            f"Generating tree output (Format: {effective_tree_format}, To file: {is_writing_tree_to_file}, To console: {is_printing_to_console})")
+            f"Generating tree output (Format: {effective_tree_format}, To file: {is_writing_tree_to_file}, To console: {is_printing_to_console})"
+        )
 
         # Generate necessary formats
         if is_writing_tree_to_file or effective_tree_format == TreeFormat.PLAIN:
             log.debug("Generating plain text tree...")
-            tree_content_plain = packer.create_ascii_tree(root_node, show_tokens=should_show_tokens_in_tree)
+            tree_content_plain = packer.create_ascii_tree(
+                root_node, show_tokens=should_show_tokens_in_tree
+            )
 
         if is_printing_to_console and effective_tree_format == TreeFormat.RICH:
             log.debug("Generating Rich tree object...")
-            tree_content_rich = packer.create_rich_tree(root_node, show_tokens=should_show_tokens_in_tree)
+            tree_content_rich = packer.create_rich_tree(
+                root_node, show_tokens=should_show_tokens_in_tree
+            )
 
         # Write to file if requested (always plain)
         if is_writing_tree_to_file:
@@ -334,18 +356,24 @@ def create_repo_context(
                         f_tree.write("\n")
                         f_tree.write(tree_content_plain)
                 except Exception as e:
-                    err_console.print(f"[bold red]Error writing tree file {tree_output_file}: {e}[/]")
+                    err_console.print(
+                        f"[bold red]Error writing tree file {tree_output_file}: {e}[/]"
+                    )
             else:
                 log.warning("Tree output file specified, but plain tree content wasn't generated.")
 
         # Print to console if needed
         elif is_printing_to_console:
-            err_console.print("\n--- Directory Tree ---", )  # Header for console tree
+            err_console.print(
+                "\n--- Directory Tree ---",
+            )  # Header for console tree
             if effective_tree_format == TreeFormat.RICH and tree_content_rich:
                 err_console.print(tree_content_rich)
             elif effective_tree_format == TreeFormat.PLAIN and tree_content_plain:
                 err_console.print(tree_content_plain)
-            err_console.print("--- End Tree ---\n", )
+            err_console.print(
+                "--- End Tree ---\n",
+            )
 
     # --- Write Main Output File ---
     console.print(f"Writing main context to [cyan]{main_output_file}[/]...")
