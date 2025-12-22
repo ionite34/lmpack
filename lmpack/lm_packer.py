@@ -144,16 +144,20 @@ class LmPacker:
         dir_map: Dict[Path, DirectoryNode] = {Path("."): root_node}
 
         for root, dirs, files in os.walk(self.index_path, topdown=True):
-            root_abs = Path(root).resolve()
-            root_rel = root_abs.relative_to(self.index_path)
+            root_path = Path(root)
+            root_abs = root_path.resolve()
+            # Use non-resolved path for relative calculation to handle symlinks correctly
+            root_rel = root_path.relative_to(self.index_path)
             parent_node = dir_map[root_rel]
 
             # Process directories
             dirs_to_process = []
             for dir_name in sorted(dirs):
                 self.stats["dirs_processed"] += 1
-                dir_abs = Path(root, dir_name).resolve()
-                dir_rel = dir_abs.relative_to(self.index_path)
+                dir_path = Path(root, dir_name)
+                dir_abs = dir_path.resolve()
+                # Use non-resolved path for relative calculation to handle symlinks correctly
+                dir_rel = dir_path.relative_to(self.index_path)
                 dir_node = DirectoryNode(dir_rel, dir_name, dir_abs)
 
                 # Check ignores/includes for the directory itself
@@ -182,8 +186,10 @@ class LmPacker:
             # Process files
             for file_name in sorted(files):
                 self.stats["files_processed"] += 1
-                file_path_abs = Path(root, file_name).resolve()
-                file_path_rel = file_path_abs.relative_to(self.index_path)
+                file_path = Path(root, file_name)
+                file_path_abs = file_path.resolve()
+                # Use non-resolved path for relative calculation to handle symlinks correctly
+                file_path_rel = file_path.relative_to(self.index_path)
 
                 file_node = FileNode(file_path_rel, file_name, file_path_abs)
 
